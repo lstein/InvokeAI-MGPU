@@ -7,8 +7,11 @@ from typing import Dict, Optional
 import torch
 
 from invokeai.backend.model_manager import AnyModel
-
-from .model_cache_base import CacheRecord, ModelCacheBase, ModelLockerBase
+from invokeai.backend.model_manager.load.model_cache.model_cache_base import (
+    CacheRecord,
+    ModelCacheBase,
+    ModelLockerBase,
+)
 
 MAX_GPU_WAIT = 600  # wait up to 10 minutes for a GPU to become free
 

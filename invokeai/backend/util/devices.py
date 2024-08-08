@@ -42,6 +42,7 @@ NAME_TO_PRECISION: Dict[TorchPrecisionNames, torch.dtype] = {
     "float16": torch.float16,
     "bfloat16": torch.bfloat16,
 }
+
 PRECISION_TO_NAME: Dict[torch.dtype, TorchPrecisionNames] = {v: k for k, v in NAME_TO_PRECISION.items()}
 
 
@@ -49,6 +50,9 @@ class TorchDevice:
     """Abstraction layer for torch devices."""
 
     _model_cache: Optional["ModelCacheBase[AnyModel]"] = None
+    CPU_DEVICE = torch.device("cpu")
+    CUDA_DEVICE = torch.device("cuda")
+    MPS_DEVICE = torch.device("mps")
 
     @classmethod
     def set_model_cache(cls, cache: "ModelCacheBase[AnyModel]"):
