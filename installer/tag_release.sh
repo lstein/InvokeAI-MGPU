@@ -26,7 +26,7 @@ VERSION=$(
     python3 -c "from invokeai.version import __version__ as version; print(version)"
 )
 PATCH=""
-VERSION="v${VERSION}${PATCH}"
+VERSION="MGPU-v${VERSION}${PATCH}"
 
 if does_tag_exist $VERSION; then
     echo -e "${BCYAN}${VERSION}${RESET} already exists:"
