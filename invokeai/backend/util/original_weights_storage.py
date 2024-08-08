@@ -25,7 +25,7 @@ class OriginalWeightsStorage:
 
         self._weights[key] = weight.detach().to(device=TorchDevice.CPU_DEVICE, copy=copy)
 
-    def get(self, key: str, copy: bool = False) -> Optional[torch.Tensor]:
+    def get(self, key: str, copy: bool = True) -> Optional[torch.Tensor]:
         weight = self._weights.get(key, None)
         if weight is not None and copy:
             weight = weight.clone()
