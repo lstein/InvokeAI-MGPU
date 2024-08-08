@@ -1002,7 +1002,6 @@ class DenoiseLatentsInvocation(BaseInvocation):
                 seed=seed,
             )
 
-            torch.nn.DataParallel(unet)  # Maybe run across multiple GPUs?
             pipeline = self.create_pipeline(unet, scheduler)
 
             _, _, latent_height, latent_width = latents.shape
