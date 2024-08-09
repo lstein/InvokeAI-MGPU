@@ -32,7 +32,7 @@ ATTENTION_TYPE = Literal["auto", "normal", "xformers", "sliced", "torch-sdp"]
 ATTENTION_SLICE_SIZE = Literal["auto", "balanced", "max", 1, 2, 3, 4, 5, 6, 7, 8]
 LOG_FORMAT = Literal["plain", "color", "syslog", "legacy"]
 LOG_LEVEL = Literal["debug", "info", "warning", "error", "critical"]
-CONFIG_SCHEMA_VERSION = "4.0.2"
+CONFIG_SCHEMA_VERSION = "4.0.3"
 
 
 def get_default_ram_cache_size() -> float:
@@ -104,7 +104,7 @@ class InvokeAIAppConfig(BaseSettings):
         vram: Amount of VRAM reserved for model storage (GB).
         lazy_offload: Keep models in VRAM until their space is needed.
         log_memory_usage: If True, a memory snapshot will be captured before and after every model cache operation, and the result will be logged (at debug level). There is a time cost to capturing the memory snapshots, so it is recommended to only enable this feature if you are actively inspecting the model cache's behaviour.
-        device: Preferred execution device. `auto` will choose the device depending on the hardware platform and the installed torch capabilities.<br>Valid values: `auto`, `cpu`, `cuda`, `cuda:1`, `mps`
+        devices: List of execution devices for rendering. Default will choose all available devices.
         precision: Floating point precision. `float16` will consume half the memory of `float32` but produce slightly lower-quality images. The `auto` setting will guess the proper precision based on your video card and operating system.<br>Valid values: `auto`, `float16`, `bfloat16`, `float32`
         sequential_guidance: Whether to calculate guidance in serial instead of in parallel, lowering memory requirements.
         attention_type: Attention type.<br>Valid values: `auto`, `normal`, `xformers`, `sliced`, `torch-sdp`
@@ -112,6 +112,7 @@ class InvokeAIAppConfig(BaseSettings):
         force_tiled_decode: Whether to enable tiled VAE decode (reduces memory consumption with some performance penalty).
         pil_compress_level: The compress_level setting of PIL.Image.save(), used for PNG encoding. All settings are lossless. 0 = no compression, 1 = fastest with slightly larger filesize, 9 = slowest with smallest filesize. 1 is typically the best setting.
         max_queue_size: Maximum number of items in the session queue.
+        max_threads: Maximum number of session queue execution threads. Autocalculated from number of GPUs if not set.
         clear_queue_on_startup: Empties session queue on startup.
         allow_nodes: List of nodes to allow. Omit to allow all.
         deny_nodes: List of nodes to deny. Omit to deny none.
@@ -175,8 +176,7 @@ class InvokeAIAppConfig(BaseSettings):
     log_memory_usage:              bool = Field(default=False,              description="If True, a memory snapshot will be captured before and after every model cache operation, and the result will be logged (at debug level). There is a time cost to capturing the memory snapshots, so it is recommended to only enable this feature if you are actively inspecting the model cache's behaviour.")
 
     # DEVICE
-    device:                      DEVICE = Field(default="auto",             description="Preferred execution device. `auto` will choose the device depending on the hardware platform and the installed torch capabilities.")
-    devices:      Optional[list[DEVICE]] = Field(default=None,              description="List of execution devices; will override default device selected.")
+    devices:      Optional[list[DEVICE]] = Field(default=None,              description="List of execution devices for rendering. Default will choose all available devices.")
     precision:                PRECISION = Field(default="auto",             description="Floating point precision. `float16` will consume half the memory of `float32` but produce slightly lower-quality images. The `auto` setting will guess the proper precision based on your video card and operating system.")
 
     # GENERATION
@@ -432,25 +432,21 @@ def migrate_v4_0_1_to_4_0_2_config_dict(config_dict: dict[str, Any]) -> dict[str
     return parsed_config_dict
 
 
-def migrate_v4_0_1_config_dict(config_dict: dict[str, Any]) -> InvokeAIAppConfig:
-    """Migrate v4.0.1 config dictionary to a current config object.
+def migrate_v4_0_2_to_4_0_3_config_dict(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Migrate v4.0.2 config dictionary to a current config object.
 
-    A few new multi-GPU options were added in 4.0.2, and this simply
-    updates the schema label.
+    Migrate MGPU-related config changes.
 
     Args:
-        config_dict: A dictionary of settings from a v4.0.1 config file.
+        config_dict: A dictionary of settings from a v4.0.2 config file.
 
     Returns:
         An instance of `InvokeAIAppConfig` with the migrated settings.
     """
-    parsed_config_dict: dict[str, Any] = {}
-    for k, _ in config_dict.items():
-        if k == "schema_version":
-            parsed_config_dict[k] = CONFIG_SCHEMA_VERSION
-    config = DefaultInvokeAIAppConfig.model_validate(parsed_config_dict)
-    return config
-
+    parsed_config_dict: dict[str, Any] = copy.deepcopy(config_dict)
+    parsed_config_dict.pop("device", None)
+    parsed_config_dict["schema_version"] = "4.0.3"
+    return parsed_config_dict
 
 # TO DO: replace this with a formal registration and migration system
 def load_and_migrate_config(config_path: Path) -> InvokeAIAppConfig:
@@ -478,6 +474,10 @@ def load_and_migrate_config(config_path: Path) -> InvokeAIAppConfig:
     if loaded_config_dict["schema_version"] == "4.0.1":
         migrated = True
         loaded_config_dict = migrate_v4_0_1_to_4_0_2_config_dict(loaded_config_dict)
+
+    if loaded_config_dict["schema_version"] == "4.0.2":
+        migrated = True
+        loaded_config_dict = migrate_v4_0_2_to_4_0_3_config_dict(loaded_config_dict)
 
     if migrated:
         shutil.copy(config_path, config_path.with_suffix(".yaml.bak"))

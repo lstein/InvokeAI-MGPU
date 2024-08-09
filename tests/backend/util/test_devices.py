@@ -21,7 +21,7 @@ device_types_mps = [("cpu", torch.float32), ("cuda:0", torch.float32), ("mps", t
 @pytest.mark.parametrize("device_name", devices)
 def test_device_choice(device_name):
     config = get_config()
-    config.device = device_name
+    config.devices = [device_name]
     TorchDevice.set_model_cache(None)  # disable dynamic selection of GPU device
     torch_device = TorchDevice.choose_torch_device()
     assert torch_device == torch.device(device_name)
@@ -35,7 +35,7 @@ def test_device_dtype_cpu(device_dtype_pair):
     ):
         device_name, dtype = device_dtype_pair
         config = get_config()
-        config.device = device_name
+        config.devices = [device_name]
         torch_dtype = TorchDevice.choose_torch_dtype()
         assert torch_dtype == dtype
 
@@ -49,7 +49,7 @@ def test_device_dtype_cuda(device_dtype_pair):
     ):
         device_name, dtype = device_dtype_pair
         config = get_config()
-        config.device = device_name
+        config.devices = [device_name]
         torch_dtype = TorchDevice.choose_torch_dtype()
         assert torch_dtype == dtype
 
@@ -62,7 +62,7 @@ def test_device_dtype_mps(device_dtype_pair):
     ):
         device_name, dtype = device_dtype_pair
         config = get_config()
-        config.device = device_name
+        config.devices = [device_name]
         torch_dtype = TorchDevice.choose_torch_dtype()
         assert torch_dtype == dtype
 
@@ -76,7 +76,7 @@ def test_device_dtype_override(device_dtype_pair):
     ):
         device_name, dtype = device_dtype_pair
         config = get_config()
-        config.device = device_name
+        config.devices = [device_name]
         config.precision = "float32"
         torch_dtype = TorchDevice.choose_torch_dtype()
         assert torch_dtype == torch.float32
@@ -99,7 +99,7 @@ def test_normalize():
 @pytest.mark.parametrize("device_name", devices)
 def test_legacy_device_choice(device_name):
     config = get_config()
-    config.device = device_name
+    config.devices = [device_name]
     with pytest.deprecated_call():
         torch_device = choose_torch_device()
     assert torch_device == torch.device(device_name)
@@ -114,7 +114,7 @@ def test_legacy_device_dtype_cpu(device_dtype_pair):
     ):
         device_name, dtype = device_dtype_pair
         config = get_config()
-        config.device = device_name
+        config.devices = [device_name]
         with pytest.deprecated_call():
             torch_device = choose_torch_device()
             returned_dtype = torch_dtype(torch_device)

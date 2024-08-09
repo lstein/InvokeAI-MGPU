@@ -300,7 +300,7 @@ class ModelCache(ModelCacheBase[AnyModel]):
             if hasattr(cache_entry.model, "to"):
                 model_in_gpu = copy.deepcopy(cache_entry.model)
                 assert hasattr(model_in_gpu, "to")
-                model_in_gpu.to(target_device)
+                model_in_gpu.to(device=target_device, dtype=TorchDevice.choose_torch_dtype(target_device))
                 return model_in_gpu
             else:
                 return cache_entry.model  # what happens in CPU stays in CPU
