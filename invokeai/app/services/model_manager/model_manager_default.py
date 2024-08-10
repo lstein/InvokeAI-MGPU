@@ -7,15 +7,15 @@ from invokeai.app.services.config.config_default import InvokeAIAppConfig
 from invokeai.app.services.download.download_base import DownloadQueueServiceBase
 from invokeai.app.services.events.events_base import EventServiceBase
 from invokeai.app.services.invoker import Invoker
-from invokeai.backend.model_manager.load import ModelCache, ModelLoaderRegistry
-from invokeai.backend.util.logging import InvokeAILogger
-from invokeai.app.services.model_manager.model_manager_base import ModelManagerServiceBase
 from invokeai.app.services.model_install.model_install_base import ModelInstallServiceBase
 from invokeai.app.services.model_install.model_install_default import ModelInstallService
 from invokeai.app.services.model_load.model_load_base import ModelLoadServiceBase
 from invokeai.app.services.model_load.model_load_default import ModelLoadService
+from invokeai.app.services.model_manager.model_manager_base import ModelManagerServiceBase
 from invokeai.app.services.model_records.model_records_base import ModelRecordServiceBase
 from invokeai.backend.model_manager.load import ModelCache, ModelLoaderRegistry
+from invokeai.backend.util.logging import InvokeAILogger
+
 
 class ModelManagerService(ModelManagerServiceBase):
     """

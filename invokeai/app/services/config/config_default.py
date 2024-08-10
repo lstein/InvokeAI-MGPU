@@ -32,7 +32,7 @@ ATTENTION_TYPE = Literal["auto", "normal", "xformers", "sliced", "torch-sdp"]
 ATTENTION_SLICE_SIZE = Literal["auto", "balanced", "max", 1, 2, 3, 4, 5, 6, 7, 8]
 LOG_FORMAT = Literal["plain", "color", "syslog", "legacy"]
 LOG_LEVEL = Literal["debug", "info", "warning", "error", "critical"]
-CONFIG_SCHEMA_VERSION = "4.0.3"
+CONFIG_SCHEMA_VERSION = "4.0.4"
 
 
 def get_default_ram_cache_size() -> float:
@@ -112,7 +112,6 @@ class InvokeAIAppConfig(BaseSettings):
         force_tiled_decode: Whether to enable tiled VAE decode (reduces memory consumption with some performance penalty).
         pil_compress_level: The compress_level setting of PIL.Image.save(), used for PNG encoding. All settings are lossless. 0 = no compression, 1 = fastest with slightly larger filesize, 9 = slowest with smallest filesize. 1 is typically the best setting.
         max_queue_size: Maximum number of items in the session queue.
-        max_threads: Maximum number of session queue execution threads. Autocalculated from number of GPUs if not set.
         clear_queue_on_startup: Empties session queue on startup.
         allow_nodes: List of nodes to allow. Omit to allow all.
         deny_nodes: List of nodes to deny. Omit to deny none.
@@ -186,7 +185,6 @@ class InvokeAIAppConfig(BaseSettings):
     force_tiled_decode:            bool = Field(default=False,              description="Whether to enable tiled VAE decode (reduces memory consumption with some performance penalty).")
     pil_compress_level:             int = Field(default=1,                  description="The compress_level setting of PIL.Image.save(), used for PNG encoding. All settings are lossless. 0 = no compression, 1 = fastest with slightly larger filesize, 9 = slowest with smallest filesize. 1 is typically the best setting.")
     max_queue_size:                 int = Field(default=10000, gt=0,        description="Maximum number of items in the session queue.")
-    max_threads:          Optional[int] = Field(default=None,               description="Maximum number of session queue execution threads. Autocalculated from number of GPUs if not set.")
     clear_queue_on_startup:        bool = Field(default=False,              description="Empties session queue on startup.")
 
     # NODES
@@ -448,6 +446,24 @@ def migrate_v4_0_2_to_4_0_3_config_dict(config_dict: dict[str, Any]) -> dict[str
     parsed_config_dict["schema_version"] = "4.0.3"
     return parsed_config_dict
 
+
+def migrate_v4_0_3_to_4_0_4_config_dict(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Migrate v4.0.3 config dictionary to a current config object.
+
+    Migrate MGPU-related config changes.
+
+    Args:
+        config_dict: A dictionary of settings from a v4.0.3 config file.
+
+    Returns:
+        An instance of `InvokeAIAppConfig` with the migrated settings.
+    """
+    parsed_config_dict: dict[str, Any] = copy.deepcopy(config_dict)
+    parsed_config_dict.pop("max_threads", None)
+    parsed_config_dict["schema_version"] = "4.0.4"
+    return parsed_config_dict
+
+
 # TO DO: replace this with a formal registration and migration system
 def load_and_migrate_config(config_path: Path) -> InvokeAIAppConfig:
     """Load and migrate a config file to the latest version.
@@ -478,6 +494,10 @@ def load_and_migrate_config(config_path: Path) -> InvokeAIAppConfig:
     if loaded_config_dict["schema_version"] == "4.0.2":
         migrated = True
         loaded_config_dict = migrate_v4_0_2_to_4_0_3_config_dict(loaded_config_dict)
+
+    if loaded_config_dict["schema_version"] == "4.0.3":
+        migrated = True
+        loaded_config_dict = migrate_v4_0_3_to_4_0_4_config_dict(loaded_config_dict)
 
     if migrated:
         shutil.copy(config_path, config_path.with_suffix(".yaml.bak"))

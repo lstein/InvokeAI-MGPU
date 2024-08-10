@@ -2,7 +2,6 @@
 
 from typing import TYPE_CHECKING, Dict, Literal, Optional, Set, Union
 
-import threading
 import torch
 from deprecated import deprecated
 
