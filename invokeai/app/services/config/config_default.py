@@ -446,6 +446,7 @@ def migrate_v4_0_2_to_4_0_3_config_dict(config_dict: dict[str, Any]) -> dict[str
     parsed_config_dict["schema_version"] = "4.0.3"
     return parsed_config_dict
 
+
 def migrate_v4_0_3_to_4_0_4_config_dict(config_dict: dict[str, Any]) -> dict[str, Any]:
     """Migrate v4.0.3 config dictionary to a current config object.
 
@@ -461,6 +462,7 @@ def migrate_v4_0_3_to_4_0_4_config_dict(config_dict: dict[str, Any]) -> dict[str
     parsed_config_dict.pop("max_threads", None)
     parsed_config_dict["schema_version"] = "4.0.4"
     return parsed_config_dict
+
 
 # TO DO: replace this with a formal registration and migration system
 def load_and_migrate_config(config_path: Path) -> InvokeAIAppConfig:

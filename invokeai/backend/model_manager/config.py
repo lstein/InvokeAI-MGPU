@@ -38,7 +38,9 @@ from invokeai.backend.stable_diffusion.schedulers.schedulers import SCHEDULER_NA
 
 # ModelMixin is the base class for all diffusers and transformers models
 # RawModel is the InvokeAI wrapper class for ip_adapters, loras, textual_inversion and onnx runtime
-AnyModel = Union[ConfigMixin, ModelMixin, RawModel, torch.nn.Module, Dict[str, torch.Tensor], diffusers.DiffusionPipeline]
+AnyModel = Union[
+    ConfigMixin, ModelMixin, RawModel, torch.nn.Module, Dict[str, torch.Tensor], diffusers.DiffusionPipeline
+]
 
 
 class InvalidModelConfigException(Exception):

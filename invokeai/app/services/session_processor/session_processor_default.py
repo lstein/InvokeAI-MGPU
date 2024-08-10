@@ -356,9 +356,7 @@ class DefaultSessionProcessor(SessionProcessorBase):
             else None
         )
 
-        self._worker_thread_count = len(
-            TorchDevice.execution_devices()
-        )
+        self._worker_thread_count = len(TorchDevice.execution_devices())
 
         self._session_worker_queue: Queue[SessionQueueItem] = Queue()
 
