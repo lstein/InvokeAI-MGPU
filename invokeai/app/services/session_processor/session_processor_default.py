@@ -356,7 +356,7 @@ class DefaultSessionProcessor(SessionProcessorBase):
             else None
         )
 
-        self._worker_thread_count = self._invoker.services.configuration.max_threads or len(
+        self._worker_thread_count = len(
             TorchDevice.execution_devices()
         )
 
