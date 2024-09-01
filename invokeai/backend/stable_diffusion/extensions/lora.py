@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Tuple
 
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
 
 
 class LoRAExt(ExtensionBase):
+    _lock = threading.Lock()
+
     def __init__(
         self,
         node_context: InvocationContext,
@@ -89,26 +92,27 @@ class LoRAExt(ExtensionBase):
             # We intentionally move to the target device first, then cast. Experimentally, this was found to
             # be significantly faster for 16-bit CPU tensors being moved to a CUDA device than doing the
             # same thing in a single call to '.to(...)'.
-            layer.to(device=device)
-            layer.to(dtype=torch.float32)
+            with cls._lock: # prevent another thread from moving this layer during patching
+                layer.to(device=device)
+                layer.to(dtype=torch.float32)
 
-            # TODO(ryand): Using torch.autocast(...) over explicit casting may offer a speed benefit on CUDA
-            # devices here. Experimentally, it was found to be very slow on CPU. More investigation needed.
-            for param_name, lora_param_weight in layer.get_parameters(module).items():
-                param_key = module_key + "." + param_name
-                module_param = module.get_parameter(param_name)
+                # TODO(ryand): Using torch.autocast(...) over explicit casting may offer a speed benefit on CUDA
+                # devices here. Experimentally, it was found to be very slow on CPU. More investigation needed.
+                for param_name, lora_param_weight in layer.get_parameters(module).items():
+                    param_key = module_key + "." + param_name
+                    module_param = module.get_parameter(param_name)
 
-                # save original weight
-                original_weights.save(param_key, module_param)
+                    # save original weight
+                    original_weights.save(param_key, module_param)
 
-                if module_param.shape != lora_param_weight.shape:
-                    # TODO: debug on lycoris
-                    lora_param_weight = lora_param_weight.reshape(module_param.shape)
+                    if module_param.shape != lora_param_weight.shape:
+                        # TODO: debug on lycoris
+                        lora_param_weight = lora_param_weight.reshape(module_param.shape)
 
-                lora_param_weight *= lora_weight * layer_scale
-                module_param += lora_param_weight.to(dtype=dtype)
+                    lora_param_weight *= lora_weight * layer_scale
+                    module_param += lora_param_weight.to(dtype=dtype)
 
-            layer.to(device=TorchDevice.CPU_DEVICE)
+                layer.to(device=TorchDevice.CPU_DEVICE)
 
     @staticmethod
     def _resolve_lora_key(model: torch.nn.Module, lora_key: str, prefix: str) -> Tuple[str, torch.nn.Module]:
