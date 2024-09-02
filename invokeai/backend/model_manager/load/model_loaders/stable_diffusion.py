@@ -77,7 +77,6 @@ class StableDiffusionDiffusersModel(GenericDiffusersLoader):
                 result = load_class.from_pretrained(model_path, torch_dtype=self._torch_dtype)
             else:
                 raise e
-
         return result
 
     def _load_from_singlefile(

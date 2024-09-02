@@ -1,6 +1,7 @@
 # Copyright (c) 2024, Lincoln D. Stein and the InvokeAI Development Team
 """Default implementation of model loading in InvokeAI."""
 
+import threading
 from logging import Logger
 from pathlib import Path
 from typing import Optional
@@ -19,10 +20,11 @@ from invokeai.backend.model_manager.load.model_util import calc_model_size_by_fs
 from invokeai.backend.model_manager.load.optimizations import skip_torch_weight_init
 from invokeai.backend.util.devices import TorchDevice
 
-
-# TO DO: The loader is not thread safe!
 class ModelLoader(ModelLoaderBase):
     """Default implementation of ModelLoaderBase."""
+
+    _semaphores: dict[str, threading.Semaphore] = {}
+    _lock = threading.Lock()
 
     def __init__(
         self,
@@ -52,8 +54,13 @@ class ModelLoader(ModelLoaderBase):
         if not model_path.exists():
             raise InvalidModelConfigException(f"Files for model '{model_config.name}' not found at {model_path}")
 
-        with skip_torch_weight_init():
+        # don't try to load a model when another process is already doing it.
+        key = f"{model_path}:{submodel_type}"
+        with self._lock:
+            self._semaphores[key] = self._semaphores.get(key) or threading.Semaphore()
+        with self._semaphores[key], skip_torch_weight_init():
             locker = self._load_and_cache(model_config, submodel_type)
+            
         return LoadedModel(config=model_config, _locker=locker)
 
     @property
@@ -79,7 +86,7 @@ class ModelLoader(ModelLoaderBase):
             submodel_type=submodel_type,
             model=loaded_model,
         )
-
+        
         return self._ram_cache.get(
             key=config.key,
             submodel_type=submodel_type,
