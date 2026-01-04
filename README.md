@@ -1,3 +1,9 @@
+<h1>Warning: Archived Copy</h1>
+
+This is a read-only copy of InvokeAI v5.0, which was adapted to support parallel processing across multiple GPUs. InvokeAI has since diverged and this fork does not have all the new features, models and other bells and whistles.
+
+Multiple GPU support is not available in InvokeAI, but may be added at some time in the future.
+
 <div align="center">
 
 ![project hero](https://github.com/invoke-ai/InvokeAI/assets/31807370/6e3728c7-e90e-4711-905c-3b55844ff5be)
